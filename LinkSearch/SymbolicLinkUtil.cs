@@ -33,6 +33,16 @@ namespace LinkSearch
             [MarshalAs(UnmanagedType.U4)] uint flagsAndAttributes,
             IntPtr templateFile);
 
+        public LinkType GetLinkType()
+        {
+            return LinkType.SymbolicLink;
+        }
+
+        public string GetLinkTypeName()
+        {
+            return "SymbolicLink";
+        }
+
         public bool Is(string path)
         {
             return File.GetAttributes(path).HasFlag(FileAttributes.ReparsePoint);
@@ -70,12 +80,13 @@ namespace LinkSearch
             var target = GetTarget(path);
             return File.Exists(target) || Directory.Exists(target);
         }
-        public string Target(string path)
+
+        public string[] Targets(string path)
         {
             var target = GetTarget(path);
             if (target.StartsWith(@"\\?\"))
                 target = target.Substring(4);
-            return target;
+            return new[] { target };
         }
     }
 }

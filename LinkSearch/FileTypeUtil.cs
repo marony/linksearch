@@ -6,10 +6,20 @@ using System.Threading.Tasks;
 
 namespace LinkSearch
 {
+    public enum LinkType
+    {
+        Invalid,
+        Junction,
+        SymbolicLink,
+        HardLink,
+    }
+
     public interface IFileTypeUtil
     {
+        LinkType GetLinkType();
+        string GetLinkTypeName();
         bool Is(string path);
         bool Valid(string path);
-        string Target(string path);
+        string[] Targets(string path);
     }
 }

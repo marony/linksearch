@@ -74,6 +74,16 @@ namespace LinkSearch
             return null;
         }
 
+        public LinkType GetLinkType()
+        {
+            return LinkType.HardLink;
+        }
+
+        public string GetLinkTypeName()
+        {
+            return "HardLink";
+        }
+
         public bool Is(string path)
         {
             if (File.GetAttributes(path).HasFlag(FileAttributes.Directory))
@@ -96,13 +106,9 @@ namespace LinkSearch
             return true;
         }
 
-        public string Target(string path)
+        public string[] Targets(string path)
         {
-            var targets = GetFileSiblingHardLinks(path);
-            var sb = new StringBuilder();
-            foreach (var t in targets)
-                sb.Append($"{t}, ");
-            return sb.ToString();
+            return GetFileSiblingHardLinks(path);
         }
     }
 }

@@ -174,6 +174,16 @@ namespace LinkSearch
             }
         }
 
+        public LinkType GetLinkType()
+        {
+            return LinkType.Junction;
+        }
+
+        public string GetLinkTypeName()
+        {
+            return "Junction";
+        }
+
         public bool Is(string path)
         {
             using (var handle = OpenReparsePoint(path, EFileAccess.GenericRead))
@@ -189,9 +199,9 @@ namespace LinkSearch
             return Directory.Exists(target);
         }
 
-        public string Target(string path)
+        public string[] Targets(string path)
         {
-            return GetTarget(path);
+            return new[] { GetTarget(path) };
         }
     }
 }

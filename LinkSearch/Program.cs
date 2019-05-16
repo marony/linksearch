@@ -11,53 +11,60 @@ namespace LinkSearch
 {
     class Program
     {
-        static JunctionUtil junctionUtil = new JunctionUtil();
-        static SymbolicLinkUtil symbolicLinkUtil = new SymbolicLinkUtil();
-        static HardLinkUtil hardLinkUtil = new HardLinkUtil();
+        private static IFileTypeUtil[] fileTypeUtils = new IFileTypeUtil[]
+        {
+            new JunctionUtil(),
+            new SymbolicLinkUtil(),
+            new HardLinkUtil(),
+        };
+
+        class FileTypeInfo
+        {
+            public FileTypeInfo(string path, LinkType linkType, string linkTypeName, bool valid, string[] targets)
+            {
+                this.Path = path;
+                this.LinkType = linkType;
+                this.LinkTypeName = linkTypeName;
+                this.Valid = valid;
+                this.Targets = targets;
+            }
+
+            public string Path { get; private set; }
+            public LinkType LinkType { get; private set; }
+            public string LinkTypeName { get; private set; }
+            public bool Valid { get; private set; }
+            public string[] Targets { get; private set; }
+        }
 
         static void Error(string fileName, Exception e)
         {
             //Console.WriteLine($"Error: {fileName}\r\n{e}");
         }
 
-        static string Process(string path)
+        static FileTypeInfo Process(string path)
         {
-            string s = null;
-            if (junctionUtil.Is(path))
+            foreach (var util in fileTypeUtils)
             {
-                // ジャンクション
-                var target = junctionUtil.Target(path);
-                if (junctionUtil.Valid(path))
-                    s = $"Junction: {path} -> {target}";
-                else
-                    s = $"Invalid Junction: {path} -> {target}";
+                if (util.Is(path))
+                {
+                    var linkType = util.GetLinkType();
+                    var linkTypeName = util.GetLinkTypeName();
+                    var valid = util.Valid(path);
+                    var targets = new string[0];
+                    if (valid)
+                        targets = util.Targets(path);
+                    return new FileTypeInfo(path, linkType, linkTypeName, valid, targets);
+                }
             }
-            else if (symbolicLinkUtil.Is(path))
-            {
-                // シンボリックリンク
-                var target = symbolicLinkUtil.Target(path);
-                if (symbolicLinkUtil.Valid(path))
-                    s = $"Symbolic Link: {path} -> {target}";
-                else
-                    s = $"Invalid Symbolic Link: {path} -> {target}";
-            }
-            else if (hardLinkUtil.Is(path))
-            {
-                // ハードリンク
-                var target = hardLinkUtil.Target(path);
-                if (hardLinkUtil.Valid(path))
-                    s = $"Hard Link: {path} -> {target}";
-                else
-                    s = $"Invalid Hard Link: {path} -> {target}";
-            }
-            return s;
+
+            return null;
         }
 
-        static IEnumerable<string> SearchAllFiles(string path)
+        static IEnumerable<FileTypeInfo> SearchAllFiles(string path)
         {
             {
                 // file
-                var r = new List<string>();
+                var r = new List<FileTypeInfo>();
                 try
                 {
                     var files = Directory.EnumerateFiles(path);
@@ -65,9 +72,9 @@ namespace LinkSearch
                     {
                         try
                         {
-                            var s = Process(file);
-                            if (s != null)
-                                r.Add(s);
+                            var info = Process(file);
+                            if (info != null)
+                                r.Add(info);
                         }
                         catch (Exception e)
                         {
@@ -84,7 +91,7 @@ namespace LinkSearch
             }
             {
                 // sub directories
-                var r = new List<string>();
+                var r = new List<FileTypeInfo>();
                 try
                 {
                     var directories = Directory.EnumerateDirectories(path);
@@ -92,9 +99,9 @@ namespace LinkSearch
                     {
                         try
                         {
-                            var s = Process(directory);
-                            if (s != null)
-                                r.Add(s);
+                            var info = Process(directory);
+                            if (info != null)
+                                r.Add(info);
                             else
                                 r.AddRange(SearchAllFiles(directory));
                         }
@@ -121,9 +128,19 @@ namespace LinkSearch
                 System.Environment.Exit(-1);
             }
             var path = args[0];
-            var files = SearchAllFiles(path);
-            foreach (var file in files)
-                Console.WriteLine(file);
+            var infos = SearchAllFiles(path);
+            foreach (var info in infos)
+            {
+                // リンクを出力
+                foreach (var target in info.Targets)
+                {
+                    Console.WriteLine($"{info.LinkTypeName},{info.Valid},{info.Path},{target}");
+                }
+            }
+#if DEBUG
+            Console.WriteLine("[END]");
+            Console.ReadKey();
+#endif
         }
     }
 }
